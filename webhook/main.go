@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/hmac"
+	"crypto/sha1"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
@@ -26,11 +27,11 @@ func printHeader(r *http.Request) {
 }
 
 func validMACSHA256(message, messageMAC []byte) bool {
-	// FIXME: Never hardcode the token into your app!
-	mac := hmac.New(sha256.New, []byte("MYSECRET"))
-	mac.Write(message)
-	expectedMAC := hex.EncodeToString(mac.Sum(nil))
-	return hmac.Equal(messageMAC, []byte(expectedMAC))
+	return validMAC(sha256.New, message, messageMAC)
+}
+
+func validMACSHA1(message, messageMAC []byte) bool {
+	return validMAC(sha1.New, message, messageMAC)
 }
 
 func validMAC(h func() hash.Hash, message, messageMAC []byte) bool {
@@ -49,9 +50,11 @@ func main() {
 		if err != nil {
 			fmt.Println(err)
 		}
-		hmacsha256 := r.Header.Get("X-Hub-Signature-256")
-		hmacsha256 = strings.TrimLeft(hmacsha256, "sha256=")
-		fmt.Println(validMACSHA256(body, []byte(hmacsha256)))
+		hmacsha256 := strings.TrimPrefix(r.Header.Get("X-Hub-Signature-256"), "sha256=")
+		fmt.Printf("sha256: %v\n", validMACSHA256(body, []byte(hmacsha256)))
+
+		hmacsha1 := strings.TrimPrefix(r.Header.Get("X-Hub-Signature"), "sha1=")
+		fmt.Printf("sha1: %v\n", validMACSHA1(body, []byte(hmacsha1)))
 
 	})
 	http.HandleFunc("/twitter", func(w http.ResponseWriter, r *http.Request) {
