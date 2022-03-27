@@ -55,8 +55,8 @@ func main() {
 
 		hmacsha1 := strings.TrimPrefix(r.Header.Get("X-Hub-Signature"), "sha1=")
 		fmt.Printf("sha1: %v\n", validMACSHA1(body, []byte(hmacsha1)))
-
 	})
+
 	http.HandleFunc("/twitter", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("called from twitter")
 		printHeader(r)
